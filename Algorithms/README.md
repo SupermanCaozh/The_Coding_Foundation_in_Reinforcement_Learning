@@ -154,7 +154,7 @@ Deep Q-Learning算法解决了tabular Q-Learning算法状态空间过大时造�
 | metric                                | derivative of the metric                                                                                                                               |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | general case$J(\theta)$               | $\nabla_{\theta}J(\theta)=\sum \eta(s)\sum\nabla_{\theta}\pi(a\|s,\theta)q_{\pi}(s,a)=E(\nabla ln \pi(a\|s,\theta)q_{\pi}(s,a))$                       |
-| $\bar v_{\pi}^0=d_0^Tv_{\pi}$         | $\nabla_{\theta} \bar v_{\pi}^0=\sum d_0(s^{'})[(I-\gamma P_{\pi})^{-1}]_{s^{'}s}\sum \pi(a\|s,\theta)\nabla_{\theta}ln{\pi}(a\|s,\theta)q_{\pi}(s,a)$ |
+| $\bar v_{\pi}^0=d_0^Tv_{\pi}$         | $\nabla_{\theta} \bar v_{\pi}^0=\sum d_0(s^{'})[(I-\gamma P_{\pi})^{-1}]_{s^{'}s}\sum \pi(a\|s,\theta)\nabla_{\theta} ln{\pi}(a\|s,\theta)q_{\pi}(s,a)$ |
 | $\bar v_{\pi}=d_{\pi}^T \bar v_{\pi}$ | $\nabla_{\theta} \bar v_{\pi}=(1-\gamma)^{-1} \sum d_{\pi}(s)\sum \nabla_{\theta}\pi (a\|s,\theta)q_{\pi}(s,a)$                                        |
 | $\bar r_{\pi}=d_{\pi}^T \bar r_{\pi}$ | $\nabla_{\theta} \bar r_{\pi}= (1-\gamma) \nabla_{\theta} \bar v_{\pi} $                                                                               |
 
