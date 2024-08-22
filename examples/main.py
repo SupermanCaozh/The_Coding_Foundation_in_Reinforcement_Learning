@@ -1,5 +1,4 @@
 # Created by Zehong Cao
-# model is known a priori when you test the model-based algorithms, as this is a deterministic environment itself
 
 import sys
 
