@@ -18,6 +18,11 @@ The *model-based* algorithms include *Value Iteration* and *Policy Iteration*, i
 
 More advanced RL algorithms will be updated here in the future...
 
+## How to practice with this repo?
+All the algorithms introduced in the book are programmed in the folder ```Algorithms```. Run ```main.py``` which is in the folder ```examples``` to see how each of them works. You had better comment others before you test one.
+
+Remeber to check your ```args``` in the script ```arguments.py``` and the environment tested in advance. Some crucial hyperparameters in the approximation methods are set in default and you are free to modify them.
+
 ## Gratitude to Prof. Shiyu Zhao
 
 None of these would be here without the great contribution made by Prof. Zhao. Here is the link to the homepage of this wonderful course: [To see a new world](https://github.com/MathFoundationRL/Book-Mathematical-Foundation-of-Reinforcement-Learning/tree/main).
