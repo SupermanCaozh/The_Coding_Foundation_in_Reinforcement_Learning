@@ -229,8 +229,8 @@ def qac(env, start_state=(0, 0), end_state=(4, 4), alpha=0.01, gamma=0.9, iterat
 def a2c(env, start_state=(0, 0), end_state=(4, 4), alpha=0.01, gamma=0.9, iterations=500):
     env.action_space = [0, 1]
 
-    policy_net = Net(4, len(env.action_space))  # (s0,s1)|--> (a0,a1,a2,a3,a4)
-    v_net = ValueNet(4, 1)  # take the (s0,s1)|--> v(s)
+    policy_net = Net(4, len(env.action_space))  # (s0,s1,s2,s3)|--> (a0,a1,a2,a3,a4)
+    v_net = ValueNet(4, 1)  # take the (s0,s1,s2,s3)|--> v(s)
     optimizer_p = torch.optim.Adam(policy_net.parameters(), lr=alpha * 0.1)  # for policy net
     optimizer_v = torch.optim.Adam(v_net.parameters(), lr=alpha)  # for q_value net
     v_losses = []

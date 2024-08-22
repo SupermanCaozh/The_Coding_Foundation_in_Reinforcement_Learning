@@ -5,7 +5,7 @@ import numpy as np
 from examples.arguments import args
 
 
-def policy_iteration(env, gamma=0.9, theta=1e-10, epochs=10, continuing=True):
+def policy_iteration(env, gamma=0.9, theta=1e-10, epochs=10, continuing=False):
     '''
     policy iteration for solving the Bellman Optimality Equation(BOE)
     :param env: instance of the environment
