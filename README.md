@@ -23,6 +23,9 @@ All the algorithms introduced in the book are programmed in the folder ```Algori
 
 Remeber to check your ```args``` in the script ```arguments.py``` and the environment tested in advance. Some crucial hyperparameters in the approximation methods are set in default and you are free to modify them.
 
+## Plan for this repo in the future
+More about the Multi-agent Reinforcement Learning will be posted here, including the implementation of relative algorithms as well as some brief description...
+
 ## Gratitude to Prof. Shiyu Zhao
 
 None of these would be here without the great contribution made by Prof. Zhao. Here is the link to the homepage of this wonderful course: [To see a new world](https://github.com/MathFoundationRL/Book-Mathematical-Foundation-of-Reinforcement-Learning/tree/main).
