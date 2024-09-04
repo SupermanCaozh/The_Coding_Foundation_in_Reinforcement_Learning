@@ -24,17 +24,24 @@ def on_policy_ql(env, start_state, alpha=0.1, gamma=0.9, epsilon=0.1, iterations
             next_state, reward = env.get_next_state_reward(state, action)
             q[s, a] = q[s, a] - alpha * (
                     q[s, a] - (reward + gamma * np.max(q[next_state])))  # solving the Bellman optimality equation
+
+            # update the policy
+            idx = np.argmax(q[s])
+            policy[s, idx] = 1 - epsilon * (len(env.action_space) - 1) / len(env.action_space)
+            policy[s, np.arange(len(env.action_space)) != idx] = epsilon / len(env.action_space)
+            v[s] = np.sum(policy[s] * q[s])
+
             s = next_state
             state = (s % env.env_size[0], s // env.env_size[0])
             a = np.random.choice(np.arange(len(env.action_space)), p=policy[s])
             action = env.action_space[a]
-    # optimal policy
+
+    # consistent policy
     # TODO: why update the policy here?
-    for s in range(env.num_states):
-        idx = np.argmax(q[s])
-        policy[s, idx] = 1
-        policy[s, np.arange(len(env.action_space)) != idx] = 0
-        v[s] = max(q[s])
+    # for s in range(env.num_states):
+    #     idx = np.argmax(q[s])
+    #     policy[s, idx] = 1
+    #     policy[s, np.arange(len(env.action_space)) != idx] = 0
     return v, policy
 
 

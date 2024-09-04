@@ -6,21 +6,19 @@ import matplotlib.pyplot as plt
 import random
 
 
-class Net(torch.nn.Module):
+class PolicyNet(torch.nn.Module):
     def __init__(self, input_size, output_size):
-        super(Net, self).__init__()
+        super(PolicyNet, self).__init__()
         self.fc1 = torch.nn.Linear(input_size, 100)
-        self.fc2 = torch.nn.Linear(100, 100)
-        self.fc3 = torch.nn.Linear(100, output_size)
+        self.fc2 = torch.nn.Linear(100, output_size)
 
     def forward(self, x):
         x = torch.nn.functional.relu(self.fc1(x))
-        x = torch.nn.functional.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.fc2(x)
         # TODO：why softmax here?
-        # x = torch.nn.functional.softmax(x, dim=1)
+        x = torch.nn.functional.softmax(x, dim=-1)
         # TODO：why tanh here?(Hint:connect it with the particular env tested here)
-        x = torch.tanh(x) * 2.0
+        # x = torch.tanh(x) * 2.0
         return x
 
 
@@ -38,9 +36,9 @@ class ValueNet(torch.nn.Module):
         return x
 
 
-def reinforce(env, start_state=(0, 0), end_state=(4, 4), alpha=0.01, gamma=0.9, iterations=1000):
+def reinforce(env, start_state=(0, 0), end_state=(4, 4), alpha=0.001, gamma=0.8, iterations=1000):
     # initialize the policy net
-    policy_net = Net(2, len(env.action_space))
+    policy_net = PolicyNet(2, len(env.action_space))
     # policy_net.apply(init_weights)
     optimizer = torch.optim.Adam(policy_net.parameters(), lr=alpha)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 50, gamma=0.5)
@@ -59,8 +57,9 @@ def reinforce(env, start_state=(0, 0), end_state=(4, 4), alpha=0.01, gamma=0.9, 
             if torch.isnan(policy).any():
                 print(policy)
                 raise ValueError("Nan detected.")
-            policy_matrix[s] = policy.detach().numpy()
-        # TODO: generate an sufficiently long episode and update the policy net
+            else:
+                policy_matrix[s] = policy.detach().numpy()
+        # TODO: generate a sufficiently long episode and update the policy net
         # Question: what is the distribution of the states sampled in the episode?
         states = []
         actions = []
@@ -70,7 +69,6 @@ def reinforce(env, start_state=(0, 0), end_state=(4, 4), alpha=0.01, gamma=0.9, 
         while s != end_state[1] * env.env_size[0] + end_state[0]:
             # for i in range(episode_length):
             state = (s % env.env_size[0], s // env.env_size[0])
-            # a = e_greedy_policy(0.1, env.action_space, policy_matrix[s] / np.sum(policy_matrix[s]))
             a = np.random.choice(len(env.action_space), p=policy_matrix[s] / np.sum(policy_matrix[s]))
             action = env.action_space[a]
             next_state, reward = env.get_next_state_reward(state, action)
@@ -83,34 +81,31 @@ def reinforce(env, start_state=(0, 0), end_state=(4, 4), alpha=0.01, gamma=0.9, 
         episode_lengths.append(len(states))
         # train the policy net by stochastic gradient ascend
         g = 0
-        mean_criteria = 0
+        criterion = 0
         optimizer.zero_grad()
         for t in range(len(states) - 1, -1, -1):
             g = gamma * g + rewards[t]  # q value estimation
+
             state = torch.tensor(np.array(states[t]) / env.env_size[0], dtype=torch.float32).view(-1, 2)
             action = actions[t]
             action_values[states[t][1] * env.env_size[0] + states[t][0], action] = g
             policy = policy_net(state).squeeze()
             # TODO: calculate the 'loss function'
             loss = -torch.log(policy.gather(0, torch.tensor(action, dtype=torch.long))) * g
-            mean_criteria += loss.item()
+            criterion += loss.item()
 
             loss.backward()
         optimizer.step()
         scheduler.step()
-        losses.append(mean_criteria / len(states))
+        losses.append(criterion / len(states))
         print(f"Interation {k + 1} has finished. Episode length is {len(states)}")
-        delta = 0
         for s in range(env.num_states):
             state_values[s] = np.sum(policy_matrix[s] * action_values[s])  # calculate the state value estimation
-    # generate the optimal policy
+    # generate the optimal deterministic policy
     for s in range(env.num_states):
-        state = torch.tensor(np.array((s % env.env_size[0], s // env.env_size[0])) / env.env_size[0],
-                             dtype=torch.float32).view(-1, 2)
-        policy = policy_net(state).squeeze().detach().numpy()
-
-        policy_matrix[s, np.argmax(policy)] = 1
-        policy_matrix[s, np.arange(len(env.action_space)) != np.argmax(policy)] = 0
+        target_index = np.argmax(policy_matrix[s])
+        policy_matrix[s, target_index] = 1
+        policy_matrix[s, np.arange(len(env.action_space)) != target_index] = 0
 
     plt.subplots(2, 1, figsize=(10, 10))
     plt.subplot(2, 1, 1)
@@ -127,9 +122,9 @@ def reinforce(env, start_state=(0, 0), end_state=(4, 4), alpha=0.01, gamma=0.9, 
 
 def qac(env, start_state=(0, 0), end_state=(4, 4), alpha=0.01, gamma=0.9, iterations=50):
     # instantiate the policy network and the q network
-    policy_net = Net(2, len(env.action_space))  # (s0,s1)|--> (a0,a1,a2,a3,a4)
+    policy_net = PolicyNet(2, len(env.action_space))  # (s0,s1)|--> (a0,a1,a2,a3,a4)
     q_net = ValueNet(3, 1)  # take the (s0,s1,a_idx)|--> q(s,a)
-    optimizer1 = torch.optim.Adam(policy_net.parameters(), lr=alpha)  # for policy net
+    optimizer1 = torch.optim.Adam(policy_net.parameters(), lr=alpha * 0.1)  # for policy net
     optimizer2 = torch.optim.Adam(q_net.parameters(), lr=alpha)  # for q_value net
 
     criteria = torch.nn.MSELoss()
@@ -226,10 +221,10 @@ def qac(env, start_state=(0, 0), end_state=(4, 4), alpha=0.01, gamma=0.9, iterat
     return state_values, pp
 
 
-def a2c(env, start_state=(0, 0), end_state=(4, 4), alpha=0.01, gamma=0.9, iterations=500):
+def a2c(env, alpha=0.01, gamma=0.9, iterations=500):
     env.action_space = [0, 1]
 
-    policy_net = Net(4, len(env.action_space))  # (s0,s1,s2,s3)|--> (a0,a1,a2,a3,a4)
+    policy_net = PolicyNet(4, len(env.action_space))  # (s0,s1,s2,s3)|--> (a0,a1,a2,a3,a4)
     v_net = ValueNet(4, 1)  # take the (s0,s1,s2,s3)|--> v(s)
     optimizer_p = torch.optim.Adam(policy_net.parameters(), lr=alpha * 0.1)  # for policy net
     optimizer_v = torch.optim.Adam(v_net.parameters(), lr=alpha)  # for q_value net
@@ -340,7 +335,7 @@ def a2c(env, start_state=(0, 0), end_state=(4, 4), alpha=0.01, gamma=0.9, iterat
 
 
 def off_policy_ac(env, alpha=0.01, gamma=0.9, iterations=50):
-    policy_net = Net(2, len(env.action_space))  # (s0,s1)|--> (a0,a1,a2,a3,a4)
+    policy_net = PolicyNet(2, len(env.action_space))  # (s0,s1)|--> (a0,a1,a2,a3,a4)
     v_net = ValueNet(2, 1)  # take the (s0,s1)|--> v(s)
     optimizer_p = torch.optim.Adam(policy_net.parameters(), lr=alpha * 0.1)  # for policy net
     optimizer_v = torch.optim.Adam(v_net.parameters(), lr=alpha)  # for q_value net
@@ -412,7 +407,7 @@ def off_policy_ac(env, alpha=0.01, gamma=0.9, iterations=50):
 
 
 def dpg(env, alpha=0.001, gamma=0.99, iterations=1000, batch_size=128):
-    actor = Net(3, 1)  # (s0,s1,s2)|-->action index
+    actor = PolicyNet(3, 1)  # (s0,s1,s2)|-->action index
     critic = ValueNet(4, 1)  # (s0,s1,s2,a)|-->action value
     optimizer_a = torch.optim.Adam(actor.parameters(), lr=alpha)
     optimizer_c = torch.optim.Adam(critic.parameters(), lr=alpha * 10)

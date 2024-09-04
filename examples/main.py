@@ -1,4 +1,5 @@
 # Created by Zehong Cao
+# model is known a priori when you test the model-based algorithms, as this is a deterministic environment itself
 
 import sys
 
@@ -44,7 +45,9 @@ if __name__ == "__main__":
     # optimal_value, optimal_policy = n_step_sarsa(env, start_state=(0, 0), steps=3)
 
     # optimal_value, optimal_policy = on_policy_ql(env, start_state=(0, 0))
-    # optimal_value, optimal_policy = dqn(env, gt_state_values=optimal_value) # you could obtain the ground_truth state values from value_iteration() above
+    # TODO: you could obtain the ground_truth state values from value_iteration() above
+    # optimal_value, optimal_policy = dqn(env, gt_state_values=optimal_value)
+
     # optimal_value, optimal_policy = reinforce(env)
     # optimal_value, optimal_policy = qac(env)
     # optimal_value, optimal_policy = a2c(env)

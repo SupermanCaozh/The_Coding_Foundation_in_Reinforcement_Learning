@@ -51,24 +51,21 @@ def Basic_MC(env, gamma=0.9, theta=1e-10, episodes=100, iterations=1000):
     return V, policy
 
 
-def ExploringStarts_MC(env, gamma=0.9, theta=1e-10, episodes=1000, iterations=1000):
+def ExploringStarts_MC(env, gamma=0.9, episodes=1000, iterations=1000):
     '''
     Exploring Starts Monte-Carlo algorithm for solving the Bellman Optimality Equation(BOE)
     :param env:
     :param gamma:
-    :param theta:
     :param episodes: length of an episode
     :param iterations:
     :return:
     '''
     # initialize the deterministic behavior policy
-    policy = np.zeros((env.num_states, len(env.action_space)))
-    policy[:, np.random.choice(len(env.action_space), env.num_states)] = 1
+    policy = np.eye(5)[np.random.randint(0, 5, size=(env.env_size[0] * env.env_size[1]))]
     # initial guess of the action values
     Q = np.zeros((env.num_states, len(env.action_space)))
     V = np.zeros(env.num_states)
     return_temp = np.zeros((env.num_states, len(env.action_space)))
-    num_temp = np.zeros((env.num_states, len(env.action_space)))
     for i in range(iterations):
         # generate an episode and use every-visit method to boost the sampling efficiency
         state_action_pairs = []
@@ -91,26 +88,29 @@ def ExploringStarts_MC(env, gamma=0.9, theta=1e-10, episodes=1000, iterations=10
                                                            action)
             rewards.append(reward)
         # policy evaluation, every-visit method
-        # TODO: what if first-visit method is used? (generalized policy iteration)
+        # TODO: what if every-visit method is used? (generalized policy iteration)
         g = 0
         for w in range(len(state_action_pairs) - 1, -1, -1):
             g = gamma * g + rewards[w]
-            s, a = state_action_pairs[w]
-            return_temp[s, a] += g
-            num_temp[s, a] += 1
+            if state_action_pairs[w] in state_action_pairs[:w]:
+                continue
+            else:
+                s, a = state_action_pairs[w]
+                return_temp[s, a] = g
         # policy improvement
         for s in range(env.num_states):
             for a, _ in enumerate(env.action_space):
-                Q[s, a] = return_temp[s, a] / num_temp[s, a] if num_temp[s, a] != 0 else 0
+                Q[s, a] = return_temp[s, a]
             idx = np.argmax(Q[s])
             policy[s, idx] = 1
             policy[s, np.arange(len(env.action_space)) != idx] = 0
             # update state values
             V[s] = max(Q[s])
+
     return V, policy
 
 
-def e_greedy_MC(env, epsilon=0.5, gamma=0.5, episodes=500, iterations=1000):
+def e_greedy_MC(env, epsilon=0.2, gamma=0.9, episodes=10000, iterations=100):
     '''
     epsilon-greedy Monte-Carlo algorithm for solving the Bellman Optimality Equation(BOE)
     :param env:
@@ -128,11 +128,12 @@ def e_greedy_MC(env, epsilon=0.5, gamma=0.5, episodes=500, iterations=1000):
     V = np.zeros(env.num_states)
     # record the frequency of each state-action pair
     visits = np.zeros((env.num_states, len(env.action_space)))
-    return_temp = np.zeros((env.num_states, len(env.action_space)))
-    num_temp = np.zeros((env.num_states, len(env.action_space)))
     for k in range(iterations):
-        s = np.random.choice(env.num_states)
-        a = np.random.choice(len(env.action_space))
+        return_temp = np.zeros((env.num_states, len(env.action_space)))
+        num_temp = np.zeros((env.num_states, len(env.action_space)))
+
+        s = 0
+        a = np.random.choice(len(env.action_space), p=policy[s])
         pairs = []
         rewards = []
         s_temp = s
@@ -146,13 +147,10 @@ def e_greedy_MC(env, epsilon=0.5, gamma=0.5, episodes=500, iterations=1000):
             # _, _, _, _ = env.step(action)  # observe the trajectories
             rewards.append(reward)
             s_temp = next_state
-            # TODO: randomly select an action from the action space, rolete wheel selection
-            # a = rolete_wheel_select(policy[s_temp].copy())
             a = np.random.choice(len(env.action_space), p=policy[s_temp])
         # env.render()  # play the video
         # policy evaluation, every-visit method
         g = 0
-
         for t in range(len(rewards) - 1, -1, -1):
             g = gamma * g + rewards[t]
             s, a = pairs[t]
@@ -169,7 +167,8 @@ def e_greedy_MC(env, epsilon=0.5, gamma=0.5, episodes=500, iterations=1000):
     #     idx = np.argmax(policy[s])
     #     policy[s, idx] = 1
     #     policy[s, np.arange(len(env.action_space)) != idx] = 0
-    # TODO: calculate the state values of deterministic policy
+
+    # TODO: calculate the state values of deterministic policy, currently return the expectation state value matrix
 
     plt.scatter(np.arange(env.num_states * len(env.action_space)), visits.flatten())
     plt.show()

@@ -86,7 +86,6 @@ class GridWorld():
             reward = self.reward_target
         elif new_state in self.forbidden_states:  # stay
             x, y = state
-            # x, y = new_state  # enter the forbidden area for uniform sampling(remove this)
             reward = self.reward_forbidden  # hit the internal wall
         else:
             x, y = new_state
@@ -132,7 +131,7 @@ class GridWorld():
             self.traj_obj, = self.ax.plot([], [], color=self.color_trajectory, linewidth=0.5)
 
         # self.agent_circle.center = (self.agent_state[0], self.agent_state[1])
-        self.agent_star.set_data([self.agent_state[0]], [self.agent_state[1]])
+        self.agent_star.set_data([self.start_state[0]], [self.start_state[1]])
         traj_x, traj_y = zip(*self.traj)
         self.traj_obj.set_data(traj_x, traj_y)
 
